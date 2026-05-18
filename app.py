@@ -91,8 +91,7 @@ def process_with_ai_brain(client, seed, raw_list_from_apis):
     3. Importance Status (Choose ONLY from: 🔥 BREAKING TREND, 📈 STABLE GROWTH, 📉 DECREASING).
     4. Target Audience Persona (e.g., Luxury Collectors, Budget Shoppers, Tech Enthusiasts, Gift Buyers).
 
-    CRITICAL INSTRUCTION: Output ONLY raw data lines. No intro text, no conversational text, no markdown table borders. Start instantly with the first data line.
-    Format: Keyword | Intent Category | Importance Status | Target Audience Persona
+    CRITICAL INSTRUCTION: Output ONLY raw data lines. No intro text, no conversational text, no markdown table borders. Start instantly with the data lines using format: Keyword | Intent Category | Importance Status | Target Audience Persona
     """
     
     try:
@@ -101,7 +100,7 @@ def process_with_ai_brain(client, seed, raw_list_from_apis):
             messages=[{"role": "user", "content": full_prompt}],
             temperature=0.3
         )
-        raw_lines = completion.choices.message.content.strip().split("\n")
+        raw_lines = completion.choices[0].message.content.strip().split("\n")
         return raw_lines, is_fallback_active
     except Exception as e:
         st.error(f"AI Connection Error: {e}")
@@ -111,18 +110,13 @@ def process_with_ai_brain(client, seed, raw_list_from_apis):
 
 with st.sidebar:
     st.markdown("### ⚙️ Configuration Panel")
-    st.markdown("Configure your app infrastructure tokens securely.")
     
     api_key = os.getenv("MY_PROJECT_GROQ_KEY")
     if api_key:
-        st.success("🔒 Local Secure Key Verified")
+        st.success("🔒 System Clearance Active")
     else:
-        st.error("🔑 Missing Key File")
-        api_key = st.text_input("Paste Groq API Key manually:", type="password")
-
-    st.markdown("---")
-    st.markdown("### 📱 Mobile View Guideline")
-    st.info("To open this on your phone free, deploy this project using your Github account repository panels.")
+        st.error("🔑 Token Key Required")
+        api_key = st.text_input("Paste Groq Key manually:", type="password")
 
 st.markdown("<h1>Ultimate Smart Keyword Harvester</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle-text'>Next-generation AI semantic engine for e-commerce keyword optimization and audience targeting.</p>", unsafe_allow_html=True)
@@ -151,6 +145,7 @@ else:
                     if "|" in line:
                         parts = [item.strip() for item in line.split("|")]
                         if len(parts) >= 4:
+                            # FIXED PARSING RULE: Added exact string index targets to populate cells smoothly
                             parsed_rows.append({
                                 "Harvested Keyword": parts[0],
                                 "Buyer Intent Category": parts[1],
