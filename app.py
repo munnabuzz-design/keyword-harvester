@@ -73,13 +73,12 @@ def fetch_live_api_keywords(seed):
 
 def process_with_ai_brain(client, seed, raw_list_from_apis):
     """Processes or generates terms cleanly, returns true state flag alongside string payload blocks."""
-    # Hide technical alert lines. Pass a structural boolean state back to interface layer instead.
     if not raw_list_from_apis:
         is_fallback_active = True
         prompt_data_source = f"Generate 35 highly relevant e-commerce long-tail search phrases based entirely on your internal memory for: '{seed}'."
     else:
         is_fallback_active = False
-        keywords_string = "\n".join([f"- {kw}" for kw in raw_keywords_list[:50]])
+        keywords_string = "\n".join([f"- {kw}" for kw in raw_list_from_apis[:50]])
         prompt_data_source = f"Analyze these raw keywords harvested from open networks for the seed product: '{seed}':\n{keywords_string}"
 
     full_prompt = f"""
@@ -102,20 +101,19 @@ def process_with_ai_brain(client, seed, raw_list_from_apis):
             messages=[{"role": "user", "content": full_prompt}],
             temperature=0.3
         )
-        # FIXED: Added [0] to correctly extract the message text from Groq's payload list
-        raw_ai_text = completion.choices[0].message.content.strip()
-        return raw_ai_text.split("\n")
+        raw_lines = completion.choices.message.content.strip().split("\n")
+        return raw_lines, is_fallback_active
+    except Exception as e:
+        st.error(f"AI Connection Error: {e}")
+        return [], False
 
 # --- Application Layout Wrapper Construction ---
 
-# 1. Sidebar Control Center Layout Panels
 with st.sidebar:
     st.markdown("### ⚙️ Configuration Panel")
     st.markdown("Configure your app infrastructure tokens securely.")
     
-    # Check for local private environment key string values safely
     api_key = os.getenv("MY_PROJECT_GROQ_KEY")
-    
     if api_key:
         st.success("🔒 Local Secure Key Verified")
     else:
@@ -124,9 +122,8 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("### 📱 Mobile View Guideline")
-    st.info("To open this on your phone free, deploy this project using the **Deploy** button at the top right of your Streamlit window screen panel.")
+    st.info("To open this on your phone free, deploy this project using your Github account repository panels.")
 
-# 2. Main Dashboard Panel Elements
 st.markdown("<h1>Ultimate Smart Keyword Harvester</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle-text'>Next-generation AI semantic engine for e-commerce keyword optimization and audience targeting.</p>", unsafe_allow_html=True)
 
@@ -135,7 +132,6 @@ if not api_key:
 else:
     client = Groq(api_key=api_key)
     
-    # CLEANED UI LABELS: Removed programming jargon phrases
     search_term = st.text_input(
         "What product or topic are you researching?", 
         placeholder="e.g., leather handbags, minimalist wallets, wireless keyboards"
@@ -147,11 +143,9 @@ else:
         else:
             with st.spinner("Synchronizing deep intelligence matrices..."):
                 
-                # Execution Matrix Steps
                 raw_words = fetch_live_api_keywords(search_term)
                 ai_output_lines, fallback_triggered = process_with_ai_brain(client, search_term, raw_words)
                 
-                # Parse layout output lines safely into dynamic grids
                 parsed_rows = []
                 for line in ai_output_lines:
                     if "|" in line:
@@ -167,14 +161,12 @@ else:
                 if parsed_rows:
                     df = pd.DataFrame(parsed_rows)
                     
-                    # HIDDEN TECHNICAL ALERTS: Replaced raw error logs with a subtle, clean hover tooltip icon
                     status_message = "Engine Optimization Active"
                     status_help = "Deep Semantic Synthesis Engine running smoothly."
                     if fallback_triggered:
                         status_message = "AI Synthesis Active"
                         status_help = "Live network pipelines crowded. Switched automatically to internal model knowledge matrices for deep phrase brainstorming."
                     
-                    # Top Metric Summary Display Rows
                     col1, col2, col3 = st.columns(3)
                     with col1:
                         st.markdown(f"<div class='metric-card'><div class='metric-num'>{len(df)}</div><div class='metric-lbl'>Actionable Keywords Compiled</div></div>", unsafe_allow_html=True)
@@ -185,19 +177,15 @@ else:
                     
                     st.markdown("<br>", unsafe_allow_html=True)
                     
-                    # Elegant Status Row featuring Hover-Tooltip Icons
                     st.markdown(f"""
                         <div class='tooltip-container'>
                             <span style='font-size: 1.1rem; font-weight:600; color:#10B981;'>⚡ Status: {status_message}</span>
                         </div>
                     """, unsafe_allow_html=True)
-                    # Streamlit Native helper context attached dynamically below status row
                     st.caption(f"💡 Hover for technical log insight: {status_help}")
                     
-                    # Display Interactive Dynamic Table Grid
                     st.dataframe(df, use_container_width=True)
                     
-                    # Instant Free Spreadsheet Download Buttons
                     csv_bytes = df.to_csv(index=False).encode('utf-8')
                     st.download_button(
                         label="📥 Download Data Spreadsheet (CSV)",
