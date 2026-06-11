@@ -16,13 +16,40 @@ from postgrest import SyncPostgrestClient
 load_dotenv()
 
 st.set_page_config(
-    page_title="Ultimate Smart Keyword Harvester & Magnet AI", 
-    page_icon="🧲", 
+    page_title="Command Center Enterprise SEO Suite", 
+    page_icon="🏢", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Initialize the Free SQLite Cache Database
+# --- PREMIUM SAAS SECURITY CLEARANCE GATEWAY ---
+def check_user_credentials():
+    """Renders a secure storefront credential barrier gate layout screen."""
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+
+    if not st.session_state["authenticated"]:
+        st.markdown("<h2 style='text-align: center; color: #FF4B4B;'>🔒 Enterprise SEO Suite Gateway</h2>", unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            with st.form("Login Form"):
+                username = st.text_input("SaaS Username Profile Name:")
+                password = st.text_input("Security Access Password Token:", type="password")
+                submit = st.form_submit_button("Authenticate System Access", type="primary")
+                
+                # Hardcoded secure sandbox demo credential tokens
+                if submit:
+                    if username == "admin" and password == "saas123":
+                        st.session_state["authenticated"] = True
+                        st.success("Access Granted! Loading Command Modules...")
+                        st.rerun()
+                    else:
+                        st.error("Invalid structural credentials or revoked access clearance.")
+            st.stop() # Freeze compiler loop layout processing until validated
+
+check_user_credentials()
+
+# Initialize Database Structures
 def init_local_db():
     conn = sqlite3.connect("keyword_cache.db")
     cursor = conn.cursor()
@@ -32,18 +59,12 @@ def init_local_db():
             PRIMARY KEY (keyword, country, mode)
         )
     """)
-    cursor.execute("PRAGMA table_info(cache)")
-    columns = [col[1] for col in cursor.fetchall()]
-    if "mode" not in columns:
-        try:
-            cursor.execute("ALTER TABLE cache ADD COLUMN mode TEXT DEFAULT 'harvester'")
-        except Exception: pass
     conn.commit()
     conn.close()
 
 init_local_db()
 
-# Initialize Pure-Web Supabase Connection using the light driver setup
+# Hook Cloud Databases
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase_client = None
@@ -62,53 +83,29 @@ def get_cached_data(keyword, country, mode):
         conn.close()
         if row: return json.loads(row)
     except Exception: pass
-    
     if supabase_client:
         try:
             res = supabase_client.from_("keyword_cache").select("response_data").eq("keyword", keyword.lower()).eq("country", country).eq("mode", mode).execute()
             if res.data:
-                cloud_data = res.data[0]["response_data"]
-                set_local_cache(keyword, country, mode, cloud_data)
+                cloud_data = res.data["response_data"]
                 return cloud_data
         except Exception: pass
     return None
 
-def set_local_cache(keyword, country, mode, data_list):
+def set_cached_data(keyword, country, mode, data_list):
     try:
         conn = sqlite3.connect("keyword_cache.db")
         cursor = conn.cursor()
-        cursor.execute(
-            "INSERT OR REPLACE INTO cache (keyword, country, mode, response_data, timestamp) VALUES (?, ?, ?, ?, ?)",
-            (keyword.lower(), country, mode, json.dumps(data_list), time.time())
-        )
+        cursor.execute("INSERT OR REPLACE INTO cache (keyword, country, mode, response_data, timestamp) VALUES (?, ?, ?, ?, ?)", (keyword.lower(), country, mode, json.dumps(data_list), time.time()))
         conn.commit()
         conn.close()
     except Exception: pass
-
-def set_cached_data(keyword, country, mode, data_list):
-    set_local_cache(keyword, country, mode, data_list)
     if supabase_client:
         try:
-            supabase_client.from_("keyword_cache").upsert({
-                "keyword": keyword.lower(), "country": country, "mode": mode, "response_data": data_list
-            }).execute()
+            supabase_client.from_("keyword_cache").upsert({"keyword": keyword.lower(), "country": country, "mode": mode, "response_data": data_list}).execute()
         except Exception: pass
 
-# Styling
-st.markdown("""
-    <style>
-        .main .block-container { padding-top: 2rem; }
-        h1 { color: #FF4B4B; font-weight: 800; font-size: 2.8rem; margin-bottom: 0.2rem; }
-        .subtitle-text { color: #A0AEC0; font-size: 1.1rem; margin-bottom: 2rem; }
-        .metric-card {
-            background-color: #1E293B; border: 1px solid #334155; padding: 1.2rem; border-radius: 12px; text-align: center;
-        }
-        .metric-num { font-size: 2.2rem; font-weight: 700; color: #00F2FE; line-height: 1; }
-        .metric-lbl { font-size: 0.85rem; color: #94A3B8; margin-top: 0.5rem; font-weight: 500; }
-    </style>
-""", unsafe_allow_html=True)
-
-HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 def fetch_live_api_keywords(seed, country_suffix):
     gathered_set = set()
@@ -118,155 +115,118 @@ def fetch_live_api_keywords(seed, country_suffix):
         if res.status_code == 200:
             for item in res.json(): gathered_set.add(f"{seed} {item['word']}")
     except Exception: pass
-    try:
-        res = requests.get(f"https://wikipedia.org{urllib.parse.quote(seed)}&limit=10", headers=HEADERS, timeout=4)
-        if res.status_code == 200:
-            raw_data = res.json()
-            if len(raw_data) > 1 and isinstance(raw_data, list):
-                for item in raw_data: gathered_set.add(item.lower())
-    except Exception: pass
     return list(gathered_set)
 
 def run_magnet_intelligence_matrix(client, seed, country):
-    """Simulates an advanced Magnet algorithm to discover search metrics and density profiles."""
-    prompt = f"""
-    You are an expert Amazon and E-commerce SEO engineer simulating an advanced keyword discovery tool.
-    Generate an advanced keyword research matrix based on the root phrase: '{seed}' for the market context: '{country}'.
-    
-    Examine your internal historical memory and provide between 30 and 50 highly converting, long-tail search terms related to this root phrase.
-    For each keyword, you must calculate and output exactly 6 columns separated by pipe characters (|):
-    1. Keyword phrase
-    2. Estimated Monthly Search Volume (Realistic predicted integer number e.g. 4500, 120, 24100)
-    3. Magnet IQ Score (Higher score means high volume but low competition - integer between 100 and 9000)
-    4. Competitor Title Density (How many page-one products use this keyword in their title? Integer between 0 and 40)
-    5. Match Type (Choose only from: Organic, Sponsored, Smart Complete)
-    6. Primary Intent Profile (Choose only from: High Purchase, Research, Comparison)
-    
-    CRITICAL INSTRUCTION: Return ONLY raw rows. No intro remarks, no headers, no conversational text.
-    Format: Keyword | Search Volume | Magnet IQ Score | Title Density | Match Type | Intent Profile
-    """
+    prompt = f"Act as a Magnet SEO engine. Generate 40 long-tail keywords for product concept derived from: '{seed}' in market context: '{country}'. Format: Keyword | Search Volume | Magnet IQ Score | Title Density | Match Type | Intent Profile. Return ONLY raw rows split by pipes."
     try:
-        completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile", messages=[{"role": "user", "content": prompt}], temperature=0.2
-        )
-        # FIXED: Explicitly target choices[0] array index layer
-        raw_ai_text = completion.choices[0].message.content.strip()
-        return raw_ai_text.split("\n")
-    except Exception as e:
-        st.error(f"Magnet AI System Failure: {e}")
-        return []
+        completion = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role": "user", "content": prompt}], temperature=0.2)
+        return completion.choices[0].message.content.strip().split("\n")
+    except Exception: return []
 
 def run_harvester_intelligence_matrix(client, seed, country, raw_list_from_apis):
-    if not raw_list_from_apis:
-        prompt_data_source = f"Brainstorm a list of 40 highly relevant e-commerce long-tail keyword phrases from your memory for: '{seed}' targeted specifically at the {country} market."
-    else:
-        keywords_string = "\n".join([f"- {kw}" for kw in raw_list_from_apis[:50]])
-        prompt_data_source = f"Analyze these raw keywords for the product '{seed}' targeted at the {country} market:\n{keywords_string}"
-
-    prompt = f"""
-    You are an expert e-commerce SEO data analyst. Parse and enrich keywords for the product: '{seed}' in country market: '{country}'.
-    {prompt_data_source}
-    Strip out junk words and group into thematic clusters.
-    
-    Output exactly 5 columns separated by pipe characters (|):
-    Cluster Group | Keyword | Intent Category | Importance Status | Target Audience Persona
-    """
+    prompt = f"Act as an SEO harvester. Filter strings and group into categories for product: '{seed}' in market: '{country}'. List: {str(raw_list_from_apis[:20])}. Format: Cluster Group | Keyword | Intent Category | Importance Status | Target Audience Persona. Return ONLY raw rows split by pipes. Strip all surrounding '**' bold symbols completely from names."
     try:
-        completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile", messages=[{"role": "user", "content": prompt}], temperature=0.2
-        )
-        # FIXED: Explicitly target choices[0] array index layer
-        raw_ai_text = completion.choices[0].message.content.strip()
-        return raw_ai_text.split("\n")
-    except Exception as e:
-        st.error(f"AI Harvester Connection Error: {e}")
-        return []
+        completion = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role": "user", "content": prompt}], temperature=0.2)
+        return completion.choices[0].message.content.strip().split("\n")
+    except Exception: return []
 
-# --- Graphical Dashboard Assembly Wrapper ---
+# --- Command Center UI Routing Automation Node ---
+# EXTENSION SYNC: Reads if extension triggered 'harvester' or 'magnet' parameter mode
+url_mode_param = st.query_params.get("mode", "harvester")
+default_index = 0 if url_mode_param == "harvester" else 1
 
 with st.sidebar:
     st.markdown("### ⚙️ Command Center Control Panel")
-    app_mode = st.radio("Select Active Tool Module:", ["🔍 Smart Keyword Harvester", "🧲 Magnet AI"])
+    app_mode = st.radio("Select Active Tool Module:", ["🔍 Smart Keyword Harvester", "🧲 Magnet AI"], index=default_index)
     target_country = st.selectbox("Target Market Location:", ["🇺🇸 United States", "🇬🇧 United Kingdom", "🇦🇺 Australia", "🇮🇳 India"])
-    country_map = {"🇺🇸 United States": "US", "🇬🇧 United Kingdom": "UK", "🇦🇺 Australia": "AU", "🇮🇳 India": "IN"}
-    country_suffix = country_map[target_country]
-
+    country_suffix = {"🇺🇸 United States": "US", "🇬🇧 United Kingdom": "UK", "🇦🇺 Australia": "AU", "🇮🇳 India": "IN"}[target_country]
+    
     st.markdown("---")
-    api_key = os.getenv("MY_PROJECT_GROQ_KEY")
-    if api_key: st.success("🔒 System Clearance Active")
-    else: api_key = st.text_input("Paste Groq Key manually:", type="password")
+    if st.button("Log Out of System Platform Session"):
+        st.session_state["authenticated"] = False
+        st.rerun()
 
-st.markdown(f"<h1>Ultimate Smart Keyword Harvester & Magnet AI</h1>", unsafe_allow_html=True)
-st.markdown("<p class='subtitle-text'>Next-generation e-commerce semantic matrix platform engineered with dual-layered caching infrastructure.</p>", unsafe_allow_html=True)
+st.markdown(f"<h1>Command Center Enterprise SEO Suite</h1>", unsafe_allow_html=True)
 
+api_key = os.getenv("MY_PROJECT_GROQ_KEY")
 if not api_key:
-    st.warning("Please configure your Groq token variable to unlock system access framework panels.")
+    st.error("Missing valid internal AI tokens.")
 else:
     client = Groq(api_key=api_key)
-    
+    url_text_param = st.query_params.get("search", "")
+
     if app_mode == "🔍 Smart Keyword Harvester":
-        search_term = st.text_input("Enter Core Product Search Term or Competitor Keyword:", placeholder="e.g., leather handbags, minimalist wallets")
+        search_term = st.text_input("Enter Scraped Competitor Parameter Naming Elements:", value=url_text_param, placeholder="e.g., leather handbags, minimalist wallets").strip()
         if st.button("Harvest Clustered Keywords", type="primary"):
-            if not search_term: st.warning("Please fill in a valid product input string first.")
-            else:
+            if search_term:
                 cached_data = get_cached_data(search_term, country_suffix, "harvester")
                 if cached_data:
                     st.success("⚡ Data loaded instantly from Layered Cache System ($0 token usage)!")
-                    df = pd.DataFrame(cached_data)
-                    st.dataframe(df.sort_values(by="Cluster Group"), use_container_width=True)
+                    st.dataframe(pd.DataFrame(cached_data), use_container_width=True)
                 else:
-                    with st.spinner("Compiling autocomplete matrices and running AI sorting nodes..."):
+                    with st.spinner("Processing deep keyword taxonomy matrices..."):
                         raw_words = fetch_live_api_keywords(search_term, country_suffix)
                         ai_lines = run_harvester_intelligence_matrix(client, search_term, target_country, raw_words)
                         parsed_rows = []
                         for line in ai_lines:
                             if "|" in line:
-                                parts = [item.strip() for item in line.split("|")]
-                                if len(parts) >= 5:
-                                    parsed_rows.append({"Cluster Group": parts[0], "Harvested Keyword": parts[1], "Buyer Intent Category": parts[2], "Trend Importance Status": parts[3], "Target Audience Focus": parts[4]})
+                                p = [item.strip().replace("**", "") for item in line.split("|")]
+                                if len(p) >= 5: parsed_rows.append({"Cluster Group": p[0], "Harvested Keyword": p[1], "Buyer Intent Category": p[2], "Trend Importance Status": p[3], "Target Audience Focus": p[4]})
                         if parsed_rows:
-                            df = pd.DataFrame(parsed_rows)
                             set_cached_data(search_term, country_suffix, "harvester", parsed_rows)
-                            st.dataframe(df.sort_values(by="Cluster Group"), use_container_width=True)
-                        else: st.error("Failed to extract data streams safely.")
-                        
+                            st.dataframe(pd.DataFrame(parsed_rows), use_container_width=True)
+
     elif app_mode == "🧲 Magnet AI":
-        search_term = st.text_input("Enter Root Keyword to Pull Advanced Market Metrics:", placeholder="e.g., wallet, mechanical keyboard, backpack")
+        search_term = st.text_input("Enter Root Keyword to Pull Advanced Market Metrics:", value=url_text_param, placeholder="e.g., wallet, mechanical keyboard").strip()
         if st.button("Run Magnet Research", type="primary"):
-            if not search_term: st.warning("Please fill in a valid root phrase string first.")
-            else:
+            if search_term:
                 cached_data = get_cached_data(search_term, country_suffix, "magnet")
                 if cached_data:
-                    st.success("⚡ Metrics retrieved from permanent cloud cache database storage layers!")
-                    df = pd.DataFrame(cached_data)
-                    st.dataframe(df.sort_values(by="Search Volume", ascending=False), use_container_width=True)
+                    st.success("⚡ Metrics retrieved from permanent cloud cache storage layers!")
+                    st.dataframe(pd.DataFrame(cached_data), use_container_width=True)
                 else:
-                    with st.spinner("Extracting search volume tiers, IQ metrics, and competitor density metrics..."):
+                    with st.spinner("Extracting search volume velocity layers..."):
                         ai_lines = run_magnet_intelligence_matrix(client, search_term, target_country)
                         parsed_rows = []
                         for line in ai_lines:
                             if "|" in line:
-                                parts = [item.strip() for item in line.split("|")]
-                                if len(parts) >= 6:
-                                    try: vol = int(parts[1].replace(",", ""))
+                                p = [item.strip() for item in line.split("|")]
+                                if len(p) >= 6:
+                                    try: vol = int(p[1].replace(",", ""))
                                     except: vol = 0
-                                    try: iq = int(parts[2].replace(",", ""))
+                                    try: iq = int(p[2].replace(",", ""))
                                     except: iq = 0
-                                    try: dens = int(parts[3].replace(",", ""))
+                                    try: dens = int(p[3].replace(",", ""))
                                     except: dens = 0
-                                    parsed_rows.append({"Keyword": parts[0], "Search Volume": vol, "Magnet IQ Score": iq, "Title Density": dens, "Match Type": parts[4], "Intent Profile": parts[5]})
+                                    parsed_rows.append({
+                                        "Keyword": p[0], 
+                                        "Search Volume": vol, 
+                                        "Magnet IQ Score": iq, 
+                                        "Title Density": dens, 
+                                        "Match Type": p[4], 
+                                        "Intent Profile": p[5]
+                                    })
                         if parsed_rows:
                             df = pd.DataFrame(parsed_rows)
                             set_cached_data(search_term, country_suffix, "magnet", parsed_rows)
                             
+                            # Premium Dashboard Layout Metrics Presentation Summary
                             col1, col2, col3 = st.columns(3)
-                            with col1: st.markdown(f"<div class='metric-card'><div class='metric-num'>{len(df)}</div><div class='metric-lbl'>Magnet Keywords Found</div></div>", unsafe_allow_html=True)
-                            with col2: st.markdown(f"<div class='metric-card'><div class='metric-num'>{int(df['Search Volume'].mean())}</div><div class='metric-lbl'>Average Search Volume</div></div>", unsafe_allow_html=True)
-                            with col3: st.markdown(f"<div class='metric-card'><div class='metric-num'>{int(df['Magnet IQ Score'].max())}</div><div class='metric-lbl'>Top Opportunity IQ Score</div></div>", unsafe_allow_html=True)
+                            col1.metric("Magnet Keywords Found", len(df))
+                            col2.metric("Average Search Volume", int(df['Search Volume'].mean()))
+                            col3.metric("Top Opportunity IQ Score", int(df['Magnet IQ Score'].max()))
                             
                             st.markdown("<br>", unsafe_allow_html=True)
                             st.dataframe(df.sort_values(by="Search Volume", ascending=False), use_container_width=True)
                             
+                            # CSV Exporter Node Link Wrapper
                             csv_bytes = df.to_csv(index=False).encode('utf-8')
-                            st.download_button(label="📥 Download Magnet Report (CSV)", data=csv_bytes, file_name=f"magnet_{search_term.replace(' ', '_')}.csv", mime="text/csv")
-                        else: st.error("Failed to build metrics data matrix grid.")
+                            st.download_button(
+                                label="📥 Download Magnet Report (CSV)", 
+                                data=csv_bytes, 
+                                file_name=f"magnet_{search_term.replace(' ', '_')}.csv", 
+                                mime="text/csv"
+                            )
+                        else: 
+                            st.error("Failed to build metrics data matrix grid.")
