@@ -120,14 +120,14 @@ def fetch_live_api_keywords(seed, country_suffix):
 def run_magnet_intelligence_matrix(client, seed, country):
     prompt = f"Act as a Magnet SEO engine. Generate 40 long-tail keywords for product concept derived from: '{seed}' in market context: '{country}'. Format: Keyword | Search Volume | Magnet IQ Score | Title Density | Match Type | Intent Profile. Return ONLY raw rows split by pipes."
     try:
-        completion = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role": "user", "content": prompt}], temperature=0.2)
+        completion = client.chat.completions.create(model="openai/gpt-oss-20b", messages=[{"role": "user", "content": prompt}], temperature=0.1)
         return completion.choices[0].message.content.strip().split("\n")
     except Exception: return []
 
 def run_harvester_intelligence_matrix(client, seed, country, raw_list_from_apis):
     prompt = f"Act as an SEO harvester. Filter strings and group into categories for product: '{seed}' in market: '{country}'. List: {str(raw_list_from_apis[:20])}. Format: Cluster Group | Keyword | Intent Category | Importance Status | Target Audience Persona. Return ONLY raw rows split by pipes. Strip all surrounding '**' bold symbols completely from names."
     try:
-        completion = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role": "user", "content": prompt}], temperature=0.2)
+        completion = client.chat.completions.create(model="openai/gpt-oss-20b", messages=[{"role": "user", "content": prompt}], temperature=0.1)
         return completion.choices[0].message.content.strip().split("\n")
     except Exception: return []
 
